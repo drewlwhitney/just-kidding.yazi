@@ -5,7 +5,7 @@ Just kidding! Undo the latest change (currently the last move operation or renam
 ## Installation
 
 ```sh
-ya pkg add drewwhitney/just-kidding.yazi
+ya pkg add drewlwhitney/just-kidding
 ```
 
 ## Usage
