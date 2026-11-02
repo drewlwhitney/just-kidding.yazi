@@ -397,6 +397,7 @@ local function create_config(opts)
     local config = {
         notify = true,
         prompt_delete = true,
+        shorten_home = false,
     }
     for key, value in pairs(opts) do
         if config[key] == nil then
