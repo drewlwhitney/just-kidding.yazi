@@ -180,21 +180,20 @@ end
 ---@param paths Url[]
 ---@return string? error
 local function restore_from_trash(paths)
-    local entries, list_err = fs.trash.list() -- top level of the trash
+    local trash_entries, list_err = fs.trash.list() -- top level of the trash
     if list_err then
         return tostring(list_err)
     end
 
     local entries_to_restore = {}
 
-    -- FIXME: item order is random, we're gonna have to use trash-cli
-    for _, entry in ipairs(entries) do
-        local original = entry.original
-        if original then
-            for _, path in ipairs(paths) do
-                if tostring(path) == tostring(original) then
-                    entries_to_restore[#entries_to_restore + 1] = entry
-                end
+    -- TODO: sort by either birth time or modification time so you restore the right item
+    for _, path in ipairs(paths) do
+        local path_string = tostring(path)
+        for _, entry in ipairs(trash_entries) do
+            if tostring(entry.original) == path_string then
+                entries_to_restore[#entries_to_restore + 1] = entry
+                break
             end
         end
     end

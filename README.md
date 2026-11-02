@@ -44,4 +44,4 @@ require("just-kidding"):setup({
 
 - `notify`: Whether to send a notification when an operation is undone.
 - `prompt_delete`: Whether to prompt for confirmation on permanent deletions.
-- `shorten_home`: Whether to shorten paths like `/home/USER/my_file.txt` to `~/my_file.txt` in notifications.
+- `shorten_home`: Whether to shorten paths like `/home/USER/my_file.txt` to `~/my_file.txt` in notifications. This only works on Linux for now.
