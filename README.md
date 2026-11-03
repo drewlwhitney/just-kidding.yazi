@@ -1,6 +1,6 @@
 # 😆 just-kidding.yazi
 
-Just kidding! A [Yazi](https://github.com/sxyazi/yazi) plugin to undo the latest change (currently the latest move, copy, rename, bulk-rename, or trash operation, more on the way).
+Just kidding! A [Yazi](https://github.com/sxyazi/yazi) plugin to undo the latest change (currently the latest move, copy, rename, bulk-rename, or trash operation, more on the way (such as file creation, bulk file creation, symlink creation, and bulk symlink creation)).
 
 ## Installation
 
