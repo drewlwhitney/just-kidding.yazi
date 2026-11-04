@@ -185,17 +185,34 @@ local function restore_from_trash(paths)
         return tostring(list_err)
     end
 
-    local entries_to_restore = {}
+    local entry_map = {}
 
-    -- TODO: sort by either birth time or modification time so you restore the right item
+    -- NOTE: this only works if the files have not been modified while
+    -- in the trash bin
+    -- override entries that were trashed later, so we always restore
+    -- most-recently-trashed path
     for _, path in ipairs(paths) do
         local path_string = tostring(path)
         for _, entry in ipairs(trash_entries) do
             if tostring(entry.original) == path_string then
-                entries_to_restore[#entries_to_restore + 1] = entry
-                break
+                local existing_entry = entry_map[path_string]
+                if existing_entry ~= nil then
+                    if entry.stat.ctime > existing_entry.stat.ctime then
+                        -- replace with the more recently-trashed entry
+                        entry_map[path_string] = entry
+                    end
+                else
+                    -- it's not already present; add it
+                    entry_map[path_string] = entry
+                end
             end
         end
+    end
+
+    -- extract the entries from the map
+    local entries_to_restore = {}
+    for _, entry in pairs(entry_map) do
+        entries_to_restore[#entries_to_restore + 1] = entry
     end
 
     local _, restore_err = fs.trash.restore(entries_to_restore)
