@@ -146,7 +146,7 @@ end
 ---@param location_map PathMap
 ---@param should_shorten_home boolean
 ---@return string
-local function format_location_map(location_map, should_shorten_home)
+local function location_map_to_string(location_map, should_shorten_home)
     local content = ""
     for from, to in pairs(location_map) do
         local from_string = tostring(from)
@@ -164,7 +164,7 @@ end
 ---@param paths Url[]
 ---@param should_shorten_home boolean
 ---@return string
-local function format_path_list(paths, should_shorten_home)
+local function paths_to_string(paths, should_shorten_home)
     local content = ""
     for _, path in ipairs(paths) do
         local path_string = tostring(path)
@@ -174,6 +174,22 @@ local function format_path_list(paths, should_shorten_home)
         content = content .. path_string .. "\n"
     end
     return content
+end
+
+---Format a list of paths (`Url`s) as a list of `Line`s.
+---@param paths Url[]
+---@param should_shorten_home boolean
+---@return ui.Line[]
+local function format_path_list(paths, should_shorten_home)
+    local lines = {}
+    for _, path in ipairs(paths) do
+        local path_string = tostring(path)
+        if should_shorten_home then
+            path_string = shorten_home(path_string)
+        end
+        lines[#lines + 1] = ui.Line(path_string):align(ui.Align.LEFT)
+    end
+    return lines
 end
 
 ---Restore a list of files from the trash.
@@ -264,7 +280,7 @@ local operations = {
             return nil, err
         end
         if config.notify then
-            notify("Moved Files", format_location_map(location_map, config.shorten_home))
+            notify("Moved Files", location_map_to_string(location_map, config.shorten_home))
         end
         return true, nil
     end,
@@ -279,7 +295,7 @@ local operations = {
             return nil, err
         end
         if config.notify then
-            notify("Renamed Files", format_location_map(location_map, config.shorten_home))
+            notify("Renamed Files", location_map_to_string(location_map, config.shorten_home))
         end
         return true, nil
     end,
@@ -294,7 +310,7 @@ local operations = {
             return nil, err
         end
         if config.notify then
-            notify("Restored Files", format_path_list(paths, config.shorten_home))
+            notify("Restored Files", paths_to_string(paths, config.shorten_home))
         end
         return true, err
     end,
@@ -308,7 +324,7 @@ local operations = {
             local proceed = ya.confirm({
                 pos = { "center", w = 70, h = 20 },
                 title = "Permanently delete " .. #paths .. " files?",
-                body = ui.Line(format_path_list(paths, config.shorten_home)):align(ui.Align.LEFT),
+                body = ui.Text(format_path_list(paths, config.shorten_home)):align(ui.Align.LEFT),
             })
             if not proceed then
                 return false, nil
