@@ -45,3 +45,18 @@ require("just-kidding"):setup({
 - `notify`: Whether to send a notification when an operation is undone.
 - `prompt_delete`: Whether to prompt for confirmation on permanent deletions.
 - `shorten_home`: Whether to shorten paths like `/home/USER/my_file.txt` to `~/my_file.txt` in notifications. This only works on Linux for now.
+
+## TODO
+
+- [ ] Implement "redo" to undo an undo
+    - [ ] Use `trash-cli` to send files to the trash for the `trash` redo operation
+        - [ ] Open an issue in Yazi to get a Lua API for this instead
+        - [ ] Replace with Lua API (if it is implemented)
+- [ ] Add setup option for custom undo-able operations so other plugins can hook into this one
+    - [ ] Figure out how this will work with notifications and the `Config`
+    - [ ] Test this with `to-folder.yazi`
+- [ ] Implement additional undo-able operations (need to open an issue in Yazi for this)
+- [ ] Allow configuration of which operations are tracked for undoing
+- [ ] Store multiple undo-able operations in a stack (requires solving the DDS delay issue)
+    - [ ] Open a discussion asking for help with DDS delay
+    - [ ] Allow configuration of the stack size
