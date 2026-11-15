@@ -2,24 +2,17 @@
 
 local utils = require(".utils")
 
----Invert a move/rename payload.
----@param original PathMap
----@return PathMap
-local function invert_rename_or_move_payload(original)
-    local payload = {}
-    -- swap the "to" and "from" locations
-    for from, to in pairs(original) do
-        payload[to] = from
-    end
-    return payload
-end
-
 -- used by `invert_operation()`
 local inverses = {
     rename_or_move = function(original)
+        local payload = {}
+        -- swap the "to" and "from" locations
+        for from, to in pairs(original) do
+            payload[to] = from
+        end
         return {
             kind = original.kind,
-            payload = invert_rename_or_move_payload(original.payload),
+            payload = payload,
         }
     end,
     trash = function(original)
@@ -248,6 +241,29 @@ local function handle_copy(state, body, use_trash)
     }
 end
 
+---Handle a single file being created.
+---@param state State
+---@param body CreateBody
+---@param use_trash boolean
+local function handle_create(state, body, use_trash)
+    state.undo_operation = {
+        kind = use_trash and "trash" or "delete",
+        payload = { body.url },
+    }
+end
+
+---Handle multiple files being created.
+---@param state State
+---@param body BulkCreateBody
+---@param use_trash boolean
+local function handle_bulk_create(state, body, use_trash)
+    state.undo_operation = {
+        kind = use_trash and "trash" or "delete",
+        payload = body.urls,
+    }
+end
+
+
 ---Create the config, overriding any options provided.
 ---@param opts Options
 ---@return Config
@@ -292,6 +308,8 @@ local function create_config(opts)
             bulk_rename = true,
             trash = true,
             copy = true,
+            create = true,
+            bulk_create = true,
         },
     }
 
@@ -308,6 +326,7 @@ local function setup(state, opts)
 
     state.config = create_config(opts or {})
     local oper_config = state.config.operations
+    local use_trash = state.config.use_trash
 
     -- handle file moves (i.e. cut/paste)
     if oper_config.move then
@@ -347,7 +366,23 @@ local function setup(state, opts)
     if oper_config.copy then
         ps.sub("duplicate", function(body)
             ---@cast body CopyBody
-            handle_copy(state, body, state.config.use_trash)
+            handle_copy(state, body, use_trash)
+        end)
+    end
+
+    --handle single-file creation
+    if oper_config.create then
+        ps.sub("create", function(body)
+            ---@cast body CreateBody
+            handle_create(state, body, use_trash)
+        end)
+    end
+
+    --handle multi-file creation
+    if oper_config.create then
+        ps.sub("bulk-create", function(body)
+            ---@cast body BulkCreateBody
+            handle_bulk_create(state, body, use_trash)
         end)
     end
 end

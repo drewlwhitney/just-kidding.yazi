@@ -1,6 +1,16 @@
 # 😆 just-kidding.yazi
 
-Just kidding! A [Yazi](https://github.com/sxyazi/yazi) plugin to undo the latest change (currently the latest move, copy, rename, bulk-rename, or trash operation, more on the way (such as file creation, bulk file creation, symlink creation, and bulk symlink creation)).
+Just kidding! A [Yazi](https://github.com/sxyazi/yazi) plugin to undo the latest change. Currently supports:
+
+- `rename`
+- `bulk-rename`
+- `create`
+- `bulk-create`
+- `copy`
+- `move`
+- `trash`
+
+More supported operations are on the way, such as `symlink` and `hardlink`!
 
 ## Installation
 
@@ -44,6 +54,8 @@ require("just-kidding"):setup({
         bulk_rename = true,
         trash = true,
         copy = true,
+        create = true,
+        bulk_create = true,
     },
 })
 ```
@@ -56,18 +68,3 @@ require("just-kidding"):setup({
 - `shorten_home`: Whether to shorten paths like `/home/USER/my_file.txt` to `~/my_file.txt` in notifications. This only works on Linux for now.
 - `use_trash`: Whether deletion operations should instead send items to the trash. This makes such operations undo-able.
 - `operations`: For each operation, specify whether it is tracked in the undo/redo history.
-
-## TODO
-
-- [ ] Implement "redo" to undo an undo
-    - [ ] Use `trash-cli` to send files to the trash for the `trash` redo operation
-        - [ ] Open an issue in Yazi to get a Lua API for this instead
-        - [ ] Replace with Lua API (if it is implemented)
-- [ ] Add setup option for custom undo-able operations so other plugins can hook into this one
-    - [ ] Figure out how this will work with notifications and the `Config`
-    - [ ] Test this with `to-folder.yazi`
-- [ ] Implement additional undo-able operations (need to open an issue in Yazi for this)
-- [ ] Allow configuration of which operations are tracked for undoing
-- [ ] Store multiple undo-able operations in a stack (requires solving the DDS delay issue)
-    - [ ] Open a discussion asking for help with DDS delay
-    - [ ] Allow configuration of the stack size

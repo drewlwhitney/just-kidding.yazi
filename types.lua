@@ -24,6 +24,12 @@
 ---@class TrashBody
 ---@field urls Url[]
 
+---@class CreateBody
+---@field url Url
+
+---@class BulkCreateBody
+---@field urls Url[]
+
 ---@class State
 ---@field undo_operation Operation?
 ---@field config Config
@@ -44,7 +50,10 @@
 ---    rename: boolean,
 ---    bulk_rename: boolean,
 ---    trash: boolean,
----    copy: boolean }
+---    copy: boolean,
+---    create: boolean,
+---    bulk_create: boolean,
+---    }
 
 ---@class Options
 ---@field notify boolean?
@@ -56,4 +65,7 @@
 ---    rename: boolean?,
 ---    bulk_rename: boolean?,
 ---    trash: boolean?,
----    copy: boolean? }?
+---    copy: boolean?,
+---    create: boolean?,
+---    bulk_create: boolean?,
+---    }?
