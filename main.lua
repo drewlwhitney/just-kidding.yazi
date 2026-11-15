@@ -1,5 +1,7 @@
 -- you can use this to write an UNDO plugin
 
+local utils = require(".utils")
+
 ---Invert a move/rename payload.
 ---@param original PathMap
 ---@return PathMap
@@ -64,166 +66,6 @@ local get_config = ya.sync(function(state)
     return state.config
 end)
 
----Show a notification.
----@param title string
----@param content string
-local function notify(title, content)
-    ya.notify({
-        title = title,
-        content = content,
-        timeout = 4.0,
-        level = "info",
-    })
-end
-
----Show an error notification.
----@param message string
-local function notify_err(message)
-    ya.notify({
-        title = "Error",
-        content = message,
-        timeout = 4.0,
-        level = "error",
-    })
-end
-
----Replace `/home/[USER]` with `~`.
----@param path string
-local function shorten_home(path)
-    local homedir = os.getenv("HOME")
-    if homedir == nil then
-        return path
-    end
-
-    return string.gsub(path, homedir, '~', 1)
-end
-
----Format a location map as a newline-separated string.
----@param location_map PathMap
----@param should_shorten_home boolean
----@return string
-local function location_map_to_string(location_map, should_shorten_home)
-    local content = ""
-    for from, to in pairs(location_map) do
-        local from_string = tostring(from)
-        local to_string = tostring(to)
-        if should_shorten_home then
-            from_string = shorten_home(from_string)
-            to_string = shorten_home(to_string)
-        end
-        content = content .. string.format("%s => %s\n", from_string, to_string)
-    end
-    return content
-end
-
----Format a list of paths (`Url`s) as a newline-separated string.
----@param paths Url[]
----@param should_shorten_home boolean
----@return string
-local function paths_to_string(paths, should_shorten_home)
-    local content = ""
-    for _, path in ipairs(paths) do
-        local path_string = tostring(path)
-        if should_shorten_home then
-            path_string = shorten_home(path_string)
-        end
-        content = content .. path_string .. "\n"
-    end
-    return content
-end
-
----Format a list of paths (`Url`s) as a list of `Line`s.
----@param paths Url[]
----@param should_shorten_home boolean
----@return ui.Line[]
-local function format_path_list(paths, should_shorten_home)
-    local lines = {}
-    for _, path in ipairs(paths) do
-        local path_string = tostring(path)
-        if should_shorten_home then
-            path_string = shorten_home(path_string)
-        end
-        lines[#lines + 1] = ui.Line(path_string):align(ui.Align.LEFT)
-    end
-    return lines
-end
-
----Restore a list of files from the trash.
----@param paths Url[]
----@return string? error
-local function restore_from_trash(paths)
-    local trash_entries, list_err = fs.trash.list() -- top level of the trash
-    if list_err then
-        return tostring(list_err)
-    end
-
-    local entry_map = {}
-
-    -- NOTE: this only works if the files have not been modified while
-    -- in the trash bin
-    -- override entries that were trashed later, so we always restore
-    -- most-recently-trashed path
-    for _, path in ipairs(paths) do
-        local path_string = tostring(path)
-        for _, entry in ipairs(trash_entries) do
-            if tostring(entry.original) == path_string then
-                local existing_entry = entry_map[path_string]
-                if existing_entry ~= nil then
-                    if entry.stat.ctime > existing_entry.stat.ctime then
-                        -- replace with the more recently-trashed entry
-                        entry_map[path_string] = entry
-                    end
-                else
-                    -- it's not already present; add it
-                    entry_map[path_string] = entry
-                end
-            end
-        end
-    end
-
-    -- extract the entries from the map
-    local entries_to_restore = {}
-    for _, entry in pairs(entry_map) do
-        entries_to_restore[#entries_to_restore + 1] = entry
-    end
-
-    local _, restore_err = fs.trash.restore(entries_to_restore)
-    if restore_err then
-        return tostring(restore_err)
-    end
-end
-
----Move (or rename) files in the map.
----@param location_map PathMap
----@return string?
-local function move_paths(location_map)
-    for from, to in pairs(location_map) do
-        local _, err = fs.rename(from, to)
-        if err then
-            return tostring(err)
-        end
-    end
-end
-
----Permanently delete files/folders.
----@param paths Url[]
----@return string? error
-local function delete_paths(paths)
-    for _, path in pairs(paths) do
-        local cha, cha_err = fs.cha(path)
-        if cha_err then
-            return tostring(cha_err)
-        end
-
-        ---@cast cha Cha already checked the error
-
-        local _, remove_err = fs.remove(cha.is_dir and "dir_all" or "file", path)
-        if remove_err then
-            return tostring(remove_err)
-        end
-    end
-end
-
 -- used by `run_operation()`
 local operations = {
     ---Move files and maybe notify.
@@ -231,12 +73,15 @@ local operations = {
     ---@param config Config
     ---@return boolean? ran,string? error
     move = function(location_map, config)
-        local err = move_paths(location_map)
+        local err = utils.move_paths(location_map)
         if err then
             return nil, err
         end
         if config.notify then
-            notify("Moved Files", location_map_to_string(location_map, config.shorten_home))
+            utils.notify(
+                "Moved Files",
+                utils.location_map_to_string(location_map, config.shorten_home)
+            )
         end
         return true, nil
     end,
@@ -246,12 +91,15 @@ local operations = {
     ---@param config Config
     ---@return boolean? ran,string? error
     rename = function(location_map, config)
-        local err = move_paths(location_map)
+        local err = utils.move_paths(location_map)
         if err then
             return nil, err
         end
         if config.notify then
-            notify("Renamed Files", location_map_to_string(location_map, config.shorten_home))
+            utils.notify(
+                "Renamed Files",
+                utils.location_map_to_string(location_map, config.shorten_home)
+            )
         end
         return true, nil
     end,
@@ -261,12 +109,12 @@ local operations = {
     ---@param config Config
     ---@return boolean? ran,string? error
     restore = function(paths, config)
-        local err = restore_from_trash(paths)
+        local err = utils.restore_from_trash(paths)
         if err then
             return nil, err
         end
         if config.notify then
-            notify("Restored Files", paths_to_string(paths, config.shorten_home))
+            utils.notify("Restored Files", utils.paths_to_string(paths, config.shorten_home))
         end
         return true, err
     end,
@@ -280,13 +128,15 @@ local operations = {
             local proceed = ya.confirm({
                 pos = { "center", w = 70, h = 20 },
                 title = "Permanently delete " .. #paths .. " files?",
-                body = ui.Text(format_path_list(paths, config.shorten_home)):align(ui.Align.LEFT),
+                body = ui.Text(
+                    utils.format_path_list(paths, config.shorten_home)
+                ):align(ui.Align.LEFT),
             })
             if not proceed then
                 return false, nil
             end
         end
-        local err = delete_paths(paths)
+        local err = utils.delete_paths(paths)
         if err then
             return nil, err
         end
@@ -451,7 +301,7 @@ return {
 
         local ran, err = run_operation(undo_operation, config)
         if err then
-            notify_err(err)
+            utils.notify_err(err)
             return
         end
         -- if the operation did not run, put it back on the stack
