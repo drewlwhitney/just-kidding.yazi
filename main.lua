@@ -316,10 +316,9 @@ return {
         local ran, err = run_operation(undo_operation, config)
         if err then
             utils.notify_err(err)
-            return
         end
         -- if the operation did not run, put it back on the stack
-        if not ran then
+        if err ~= nil or not ran then
             set_undo_operation(undo_operation)
         end
     end,
