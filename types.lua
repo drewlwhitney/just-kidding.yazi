@@ -39,9 +39,21 @@
 ---@field prompt_delete boolean
 ---@field shorten_home boolean
 ---@field use_trash boolean
+---@field operations {
+---    move: boolean,
+---    rename: boolean,
+---    bulk_rename: boolean,
+---    trash: boolean,
+---    copy: boolean }
 
 ---@class Options
 ---@field notify boolean?
 ---@field prompt_delete boolean?
 ---@field shorten_home boolean?
 ---@field use_trash boolean?
+---@field operations {
+---    move: boolean?,
+---    rename: boolean?,
+---    bulk_rename: boolean?,
+---    trash: boolean?,
+---    copy: boolean? }?

@@ -245,20 +245,51 @@ end
 ---@param opts Options
 ---@return Config
 local function create_config(opts)
+    ---Merge the `config_table` with the `opts_table`.
+    ---@param config_table table
+    ---@param opts_table table
+    ---@return string? error
+    local function merge_config(config_table, opts_table)
+        for key, opts_value in pairs(opts_table) do
+            local config_value = config_table[key]
+            if config_value == nil then
+                return "Unknown config option: " .. key
+            end
+
+            local opts_value_type = type(opts_value)
+            local config_value_type = type(config_value)
+
+            if opts_value_type == "table" then
+                if config_value_type ~= "table" then
+                    return "Invalid value for key: " .. key
+                end
+                merge_config(config_value, opts_value)
+            else
+                if config_value_type ~= opts_value_type then
+                    return "Invalid value for key: " .. key
+                end
+                config_table[key] = opts_value
+            end
+        end
+    end
+
+    ---@type Config
     local config = {
         notify = true,
         prompt_delete = true,
         shorten_home = false,
         use_trash = true,
+        operations = {
+            move = true,
+            rename = true,
+            bulk_rename = true,
+            trash = true,
+            copy = true,
+        },
     }
-    for key, value in pairs(opts) do
-        if config[key] == nil then
-            error("Unknown config option: " .. key)
-        end
-        if value ~= nil then
-            config[key] = value
-        end
-    end
+
+    merge_config(config, opts)
+
     return config
 end
 
@@ -269,36 +300,49 @@ local function setup(state, opts)
     state.undo_operation = nil
 
     state.config = create_config(opts or {})
+    local oper_config = state.config.operations
 
     -- handle file moves (i.e. cut/paste)
-    ps.sub("move", function(body)
-        ---@cast body MoveBody
-        handle_move(state, body)
-    end)
+    if oper_config.move then
+        if state.config.operations.move then
+            ps.sub("move", function(body)
+                ---@cast body MoveBody
+                handle_move(state, body)
+            end)
+        end
+    end
 
     -- handle single-file renames
-    ps.sub("rename", function(body)
-        ---@cast body RenameBody
-        handle_rename(state, body)
-    end)
+    if oper_config.rename then
+        ps.sub("rename", function(body)
+            ---@cast body RenameBody
+            handle_rename(state, body)
+        end)
+    end
 
     -- handle multi-file renames
-    ps.sub("bulk-rename", function(body)
-        ---@cast body BulkRenameBody
-        handle_bulk_rename(state, body)
-    end)
+    if oper_config.bulk_rename then
+        ps.sub("bulk-rename", function(body)
+            ---@cast body BulkRenameBody
+            handle_bulk_rename(state, body)
+        end)
+    end
 
     -- handle files being sent to the trash
-    ps.sub("trash", function(body)
-        ---@cast body TrashBody
-        handle_trash(state, body)
-    end)
+    if oper_config.trash then
+        ps.sub("trash", function(body)
+            ---@cast body TrashBody
+            handle_trash(state, body)
+        end)
+    end
 
     -- handle files being copied
-    ps.sub("duplicate", function(body)
-        ---@cast body CopyBody
-        handle_copy(state, body, state.config.use_trash)
-    end)
+    if oper_config.copy then
+        ps.sub("duplicate", function(body)
+            ---@cast body CopyBody
+            handle_copy(state, body, state.config.use_trash)
+        end)
+    end
 end
 
 return {
