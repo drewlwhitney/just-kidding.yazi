@@ -1,0 +1,17 @@
+- [ ] Implement "redo" to undo an undo
+    - [x] Use `trash-cli` to send files to the trash for the `trash` redo operation
+        - [x] Open an issue in Yazi to get a Lua API for this instead
+        - [ ] Replace with Lua API (if it is implemented)
+- [ ] Add setup option for custom undo-able operations so other plugins can hook into this one
+    - [ ] Figure out how this will work with notifications and the `Config`
+        - Best solution is probably to let plugins emit that something has occurred, and have the plugin send a payload with the message. When the triggers "undo/redo", send the payload back to the plugin and let the plugin handle the actual undo/redo logic.
+        - For notifications, let the user configure them. If the user does not set a message, use something like "Undid custom operation"
+    - [ ] Test this with `to-folder.yazi`
+- [ ] Implement additional undo-able operations (need to open issues in Yazi for this)
+    - [x] `create` and `bulk-create`
+    - [ ] `symlink` and `hardlink`
+- [x] Allow configuration of which operations are tracked for undoing
+- [ ] Store multiple undo-able operations in a stack (requires solving the DDS delay issue)
+    - [ ] Open a discussion asking for help with DDS delay
+        - If there is no fix, add a config option for how long to delay before undoing an operation. Use `ya.sleep()`
+    - [ ] Allow configuration of the stack size
