@@ -131,6 +131,20 @@ function M.restore_from_trash(paths)
     end
 end
 
+---Send files to the trash (currently uses `trash-cli`).
+---@param paths Url[]
+---@return string? error
+function M.send_to_trash(paths)
+    local path_strings = {}
+    for _, path in ipairs(paths) do
+        path_strings[#path_strings + 1] = tostring(path)
+    end
+    local _, error = Command("trash-put"):arg(path_strings):output()
+    if error then
+        return tostring(error)
+    end
+end
+
 ---Move (or rename) files in the map.
 ---@param path_map PathMap
 ---@return string?
