@@ -188,6 +188,13 @@ end
 ---@param state State
 ---@param body RenameBody
 local function handle_rename(state, body)
+    --don't do anything if the name didn't actually change
+    --TODO: maybe remove this depending on the answer to
+    --https://github.com/sxyazi/yazi/discussions/4499
+    if tostring(body.to) == tostring(body.from) then
+        return
+    end
+
     local payload = {}
     payload[body.to] = body.from
     -- store the "from" and "to" paths in reverse
