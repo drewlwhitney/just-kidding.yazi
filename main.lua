@@ -71,7 +71,7 @@ local operations = {
     ---Move files and maybe notify.
     ---@param location_map PathMap
     ---@param config Config
-    ---@return boolean? ran,string? error
+    ---@return boolean? ran, string? error
     move = function(location_map, config)
         local err = utils.move_paths(location_map)
         if err then
@@ -89,7 +89,7 @@ local operations = {
     ---Move files and maybe notify.
     ---@param location_map PathMap
     ---@param config Config
-    ---@return boolean? ran,string? error
+    ---@return boolean? ran, string? error
     rename = function(location_map, config)
         local err = utils.move_paths(location_map)
         if err then
@@ -107,7 +107,7 @@ local operations = {
     ---Restore files from the trash.
     ---@param paths Url[]
     ---@param config Config
-    ---@return boolean? ran,string? error
+    ---@return boolean? ran, string? error
     restore = function(paths, config)
         local err = utils.restore_from_trash(paths)
         if err then
@@ -119,10 +119,10 @@ local operations = {
         return true, err
     end,
 
-    ---Permanently delete files/folders.
+    ---Permanently delete files/folders. Cannot be undone.
     ---@param paths Url[]
     ---@param config Config
-    ---@return boolean? ran,string? error
+    ---@return boolean? ran, string? error
     delete = function(paths, config)
         if config.prompt_delete then
             local proceed = ya.confirm({
@@ -137,6 +137,18 @@ local operations = {
             end
         end
         local err = utils.delete_paths(paths)
+        if err then
+            return nil, err
+        end
+        return true, nil
+    end,
+
+    ---Send files/folders to the trash.
+    ---@param paths Url[]
+    ---@param config Config
+    ---@return boolean? ran, string? error
+    trash = function(paths, config)
+        local err = utils.send_to_trash(paths)
         if err then
             return nil, err
         end
@@ -215,7 +227,8 @@ end
 ---Handle files being copied.
 ---@param state State
 ---@param body CopyBody
-local function handle_copy(state, body)
+---@param use_trash boolean
+local function handle_copy(state, body, use_trash)
     -- discard the sources, store the destinations
     local destinations = {}
     for _, item in ipairs(body.items) do
@@ -223,7 +236,7 @@ local function handle_copy(state, body)
     end
 
     state.undo_operation = {
-        kind = "delete",
+        kind = use_trash and "trash" or "delete",
         payload = destinations,
     }
 end
@@ -236,6 +249,7 @@ local function create_config(opts)
         notify = true,
         prompt_delete = true,
         shorten_home = false,
+        use_trash = true,
     }
     for key, value in pairs(opts) do
         if config[key] == nil then
@@ -283,7 +297,7 @@ local function setup(state, opts)
     -- handle files being copied
     ps.sub("duplicate", function(body)
         ---@cast body CopyBody
-        handle_copy(state, body)
+        handle_copy(state, body, state.config.use_trash)
     end)
 end
 

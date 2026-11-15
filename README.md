@@ -36,6 +36,7 @@ require("just-kidding"):setup({
     notify = true,
     prompt_delete = true,
     shorten_home = false,
+    use_trash = true,
 })
 ```
 
@@ -45,6 +46,7 @@ require("just-kidding"):setup({
 - `notify`: Whether to send a notification when an operation is undone.
 - `prompt_delete`: Whether to prompt for confirmation on permanent deletions.
 - `shorten_home`: Whether to shorten paths like `/home/USER/my_file.txt` to `~/my_file.txt` in notifications. This only works on Linux for now.
+- `use_trash`: Whether deletion operations should instead send items to the trash. This makes such operations undo-able.
 
 ## TODO
 

@@ -32,14 +32,16 @@
 
 ---@class Operation
 ---@field payload OperationPayload
----@field kind "move" | "rename" | "restore" | "delete"
+---@field kind "move" | "rename" | "restore" | "delete" | "trash"
 
 ---@class Config
 ---@field notify boolean
 ---@field prompt_delete boolean
 ---@field shorten_home boolean
+---@field use_trash boolean
 
 ---@class Options
 ---@field notify boolean?
 ---@field prompt_delete boolean?
 ---@field shorten_home boolean?
+---@field use_trash boolean?
