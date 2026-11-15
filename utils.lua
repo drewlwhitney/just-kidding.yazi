@@ -139,7 +139,7 @@ function M.format_path_list(paths, should_shorten_home)
     return lines
 end
 
----Restore a list of files from the trash.
+---Restore a list of files from the trash. Restores the most recent entries.
 ---@param paths Url[]
 ---@return string? error
 function M.restore_from_trash(paths)
@@ -148,34 +148,22 @@ function M.restore_from_trash(paths)
         return tostring(list_err)
     end
 
-    local entry_map = {}
-
+    -- sort by most-recently-trashed
     -- NOTE: this only works if the files have not been modified while
     -- in the trash bin
-    -- override entries that were trashed later, so we always restore
-    -- most-recently-trashed path
+    table.sort(trash_entries, function(first, second)
+        return first.stat.ctime > second.stat.ctime
+    end)
+
+    local entries_to_restore = {}
+
     for _, path in ipairs(paths) do
-        local path_string = tostring(path)
         for _, entry in ipairs(trash_entries) do
-            if tostring(entry.original) == path_string then
-                local existing_entry = entry_map[path_string]
-                if existing_entry ~= nil then
-                    if entry.stat.ctime > existing_entry.stat.ctime then
-                        -- replace with the more recently-trashed entry
-                        entry_map[path_string] = entry
-                    end
-                else
-                    -- it's not already present; add it
-                    entry_map[path_string] = entry
-                end
+            if tostring(entry.original) == tostring(path) then
+                entries_to_restore[#entries_to_restore + 1] = entry
+                break
             end
         end
-    end
-
-    -- extract the entries from the map
-    local entries_to_restore = {}
-    for _, entry in pairs(entry_map) do
-        entries_to_restore[#entries_to_restore + 1] = entry
     end
 
     local _, restore_err = fs.trash.restore(entries_to_restore)
