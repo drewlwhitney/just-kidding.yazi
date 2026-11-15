@@ -80,7 +80,7 @@ local operations = {
         if config.notify then
             utils.notify(
                 "Moved Files",
-                utils.location_map_to_string(location_map, config.shorten_home)
+                utils.path_map_to_string(location_map, config.shorten_home)
             )
         end
         return true, nil
@@ -98,7 +98,7 @@ local operations = {
         if config.notify then
             utils.notify(
                 "Renamed Files",
-                utils.location_map_to_string(location_map, config.shorten_home)
+                utils.path_map_to_string(location_map, config.shorten_home)
             )
         end
         return true, nil

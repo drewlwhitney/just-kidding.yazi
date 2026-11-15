@@ -36,13 +36,13 @@ function M.shorten_home(path)
     return string.gsub(path, homedir, '~', 1)
 end
 
----Format a location map as a newline-separated string.
----@param location_map PathMap
+---Format a path map as a newline-separated string.
+---@param path_map PathMap
 ---@param should_shorten_home boolean
 ---@return string
-function M.location_map_to_string(location_map, should_shorten_home)
+function M.path_map_to_string(path_map, should_shorten_home)
     local content = ""
-    for from, to in pairs(location_map) do
+    for from, to in pairs(path_map) do
         local from_string = tostring(from)
         local to_string = tostring(to)
         if should_shorten_home then
@@ -132,10 +132,10 @@ function M.restore_from_trash(paths)
 end
 
 ---Move (or rename) files in the map.
----@param location_map PathMap
+---@param path_map PathMap
 ---@return string?
-function M.move_paths(location_map)
-    for from, to in pairs(location_map) do
+function M.move_paths(path_map)
+    for from, to in pairs(path_map) do
         local _, err = fs.rename(from, to)
         if err then
             return tostring(err)
