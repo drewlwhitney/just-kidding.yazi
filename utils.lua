@@ -25,6 +25,32 @@ function M.notify_err(message)
     })
 end
 
+---Get the keys of a table.
+---@generic K
+---@generic V
+---@param tab table<K, V>
+---@return K[]
+local function keys(tab)
+    local out = {}
+    for key, _ in pairs(tab) do
+        out[#out + 1] = key
+    end
+    return out
+end
+
+---Get the values of a table.
+---@generic K
+---@generic V
+---@param tab table<K, V>
+---@return V[]
+local function values(tab)
+    local out = {}
+    for _, value in pairs(tab) do
+        out[#out + 1] = value
+    end
+    return out
+end
+
 ---Replace `/home/[USER]` with `~`.
 ---@param path string
 function M.shorten_home(path)
@@ -34,6 +60,33 @@ function M.shorten_home(path)
     end
 
     return string.gsub(path, homedir, '~', 1)
+end
+
+local function dump(o)
+    if type(o) == 'table' then
+        local s = '{ '
+        for k, v in pairs(o) do
+            local foo = ""
+            if type(k) ~= 'number' then foo = '"' .. foo .. '"' end
+            s = s .. '[' .. foo .. '] = ' .. dump(v) .. ','
+        end
+        return s .. '} '
+    else
+        return tostring(o)
+    end
+end
+
+---Ensure none of the paths exist. If any do, return the first one.
+---@param paths Url[]
+---@return Url?
+local function ensure_none_exist(paths)
+    for _, path in ipairs(paths) do
+        local cha, _ = fs.cha(path)
+        -- this indicates the file exists
+        if cha ~= nil then
+            return path
+        end
+    end
 end
 
 ---Format a path map as a newline-separated string.
@@ -147,8 +200,13 @@ end
 
 ---Move (or rename) files in the map.
 ---@param path_map PathMap
----@return string?
+---@return string? error
 function M.move_paths(path_map)
+    local existing_path = ensure_none_exist(values(path_map))
+    if existing_path ~= nil then
+        return "File exists: " .. tostring(existing_path)
+    end
+
     for from, to in pairs(path_map) do
         local _, err = fs.rename(from, to)
         if err then
